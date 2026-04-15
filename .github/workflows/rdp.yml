@@ -1,28 +1,43 @@
-name: RDP No Ngrok
+name: RDP Cloudflare TCP
 
-on: [workflow_dispatch]
+on:
+  workflow_dispatch:
 
 jobs:
   rdp:
     runs-on: ubuntu-latest
+    timeout-minutes: 360
 
     steps:
+    - name: Update system
+      run: sudo apt update
+
     - name: Install Desktop + RDP
       run: |
-        sudo apt update
         sudo apt install xfce4 xfce4-goodies -y
         sudo apt install xrdp -y
         sudo systemctl enable xrdp
         sudo systemctl start xrdp
 
-    - name: Set password
-      run: echo "runner:123456" | sudo chpasswd
+    - name: Set user password
+      run: |
+        echo "runner:123456" | sudo chpasswd
+
+    - name: Fix xrdp session
+      run: |
+        echo xfce4-session > ~/.xsession
+        sudo sed -i 's/3389/3389/g' /etc/xrdp/xrdp.ini
+        sudo systemctl restart xrdp
 
     - name: Install cloudflared
       run: |
         wget https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
         sudo dpkg -i cloudflared-linux-amd64.deb
 
-    - name: Run Tunnel
+    - name: Run Cloudflare TCP Tunnel
       run: |
-        cloudflared tunnel --no-autoupdate --url tcp://localhost:3389
+        echo "===== RDP INFO ====="
+        echo "Username: runner"
+        echo "Password: 123456"
+        echo "===================="
+        cloudflared tunnel --no-autoupdate --protocol http2 --url tcp://localhost:3389
