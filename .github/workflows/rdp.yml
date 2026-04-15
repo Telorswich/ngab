@@ -1,31 +1,28 @@
-name: RDP
+name: RDP No Ngrok
 
 on: [workflow_dispatch]
 
 jobs:
-  build:
+  rdp:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Update
-      run: sudo apt update
-
     - name: Install Desktop + RDP
       run: |
+        sudo apt update
         sudo apt install xfce4 xfce4-goodies -y
         sudo apt install xrdp -y
         sudo systemctl enable xrdp
         sudo systemctl start xrdp
 
     - name: Set password
-      run: |
-        echo "runner:123456" | sudo chpasswd
+      run: echo "runner:123456" | sudo chpasswd
 
-    - name: Install ngrok
+    - name: Install cloudflared
       run: |
-        wget https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-stable-linux-amd64.zip
-        unzip ngrok-stable-linux-amd64.zip
-        ./ngrok authtoken TOKEN_NGROK_KAMU
+        wget https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
+        sudo dpkg -i cloudflared-linux-amd64.deb
 
-    - name: Run ngrok
-      run: ./ngrok tcp 3389
+    - name: Run Tunnel
+      run: |
+        cloudflared tunnel --no-autoupdate --url tcp://localhost:3389
