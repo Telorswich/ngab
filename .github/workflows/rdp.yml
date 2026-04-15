@@ -1,4 +1,4 @@
-name: RDP Cloudflare TCP
+name: RDP Pinggy
 
 on:
   workflow_dispatch:
@@ -9,7 +9,7 @@ jobs:
     timeout-minutes: 360
 
     steps:
-    - name: Update system
+    - name: Update
       run: sudo apt update
 
     - name: Install Desktop + RDP
@@ -19,25 +19,16 @@ jobs:
         sudo systemctl enable xrdp
         sudo systemctl start xrdp
 
-    - name: Set user password
-      run: |
-        echo "runner:123456" | sudo chpasswd
+    - name: Set password
+      run: echo "runner:123456" | sudo chpasswd
 
-    - name: Fix xrdp session
-      run: |
-        echo xfce4-session > ~/.xsession
-        sudo sed -i 's/3389/3389/g' /etc/xrdp/xrdp.ini
-        sudo systemctl restart xrdp
+    - name: Fix session
+      run: echo xfce4-session > ~/.xsession
 
-    - name: Install cloudflared
-      run: |
-        wget https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
-        sudo dpkg -i cloudflared-linux-amd64.deb
-
-    - name: Run Cloudflare TCP Tunnel
+    - name: Start Tunnel (Pinggy)
       run: |
         echo "===== RDP INFO ====="
         echo "Username: runner"
         echo "Password: 123456"
         echo "===================="
-        cloudflared tunnel --no-autoupdate --protocol http2 --url tcp://localhost:3389
+        ssh -p 443 -o StrictHostKeyChecking=no -R0:localhost:3389 tcp@a.pinggy.io
